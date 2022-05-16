@@ -1,0 +1,55 @@
+---
+- hosts: centos
+  remote_user: gadmin
+  become: true
+  vars:
+    download_url: https://download.java.net/java/GA/jdk17/0d483333a00540d886896bac774ff48b/35/GPL/openjdk-17_linux-x64_bin.tar.gz
+    download_folder: /opt
+    java_name: "{{download_folder}}/jdk-17"
+    java_archive: "{{download_folder}}/openjdk-17_linux-x64_bin.tar.gz"
+
+  tasks:
+  - name: Remove older version JDK
+    yum:
+      name: java
+      state: absent
+
+  - name: Download Java
+    get_url:
+      url: '{{download_url}}'
+      dest: '{{download_folder}}'
+
+  - name: Unpack archive
+    ansible.builtin.unarchive:
+      src: '{{java_archive}}'
+      dest: '{{download_folder}}'
+      owner: root
+      group: root
+      remote_src: yes
+
+  - name: Make Java available for system
+    command: 'alternatives --install "/usr/bin/java" "java" "{{java_name}}/bin/java" 2000'
+
+  - name: Clean up
+    file: state=absent path={{java_archive}}
+
+  - name: Install nginx
+    yum: 
+      name: nginx
+      state: latest
+
+  - name: nginx systemd
+    systemd:
+      name: nginx
+      enabled: yes
+      state: started
+
+  - name: install index.html
+    template: 
+      src: /home/gadmin/Ansible-test-JDK8/templates/index.html.j2
+      dest: /usr/share/nginx/html/index.html
+
+  - name: restart nginx
+    service:
+      name=nginx
+      state=restarted

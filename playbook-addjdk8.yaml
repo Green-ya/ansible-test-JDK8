@@ -1,0 +1,12 @@
+---
+- hosts: centos
+  remote_user: gadmin
+  become: true
+  vars:
+    folder: /tmp
+    java_name: "{{folder}}/jdk-8u331-linux-x64.rpm"
+
+
+  tasks:
+  - name: install from local RPM
+    command: 'yum localinstall {{java_name}} -y'
